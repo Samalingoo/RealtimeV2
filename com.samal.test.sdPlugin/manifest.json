@@ -8,6 +8,7 @@
 			"UUID": "com.samal.test.active-users",
 			"Icon": "imgs/actions/active-users/icon",
 			"Tooltip": "Displays real-time active users from Google Analytics",
+			"PropertyInspectorPath": "ui/active-users.html",
 			"Controllers": [
 				"Keypad"
 			],
@@ -24,6 +25,7 @@
 			"UUID": "com.samal.test.daily-pageviews",
 			"Icon": "imgs/actions/daily-pageviews/icon",
 			"Tooltip": "Displays pageviews from the last 24 hours",
+			"PropertyInspectorPath": "ui/daily-pageviews.html",
 			"Controllers": [
 				"Keypad"
 			],
@@ -40,6 +42,7 @@
 			"UUID": "com.samal.test.weekly-pageviews",
 			"Icon": "imgs/actions/weekly-pageviews/icon",
 			"Tooltip": "Displays pageviews from the last 7 days",
+			"PropertyInspectorPath": "ui/weekly-pageviews.html",
 			"Controllers": [
 				"Keypad"
 			],

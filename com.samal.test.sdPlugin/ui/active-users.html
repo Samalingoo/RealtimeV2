@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>com.samal.test.active-users PI</title>
+	<link rel="stylesheet" href="sdpi.css">
+</head>
+<body>
+	<div class="sdpi-wrapper">
+		
+		<!-- Display Settings -->
+		<div type="group" class="sdpi-heading">Display Settings</div>
+		
+		<div type="textfield" class="sdpi-item">
+			<div class="sdpi-item-label">Title</div>
+			<input class="sdpi-item-value" type="text" id="customTitle" value="Active Users" placeholder="Active Users">
+		</div>
+		
+		<!-- Size Settings -->
+		<div type="group" class="sdpi-heading">Size Settings</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Title Size</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="titleSize">14</span>
+				<input type="range" id="titleSize" min="10" max="20" value="14">
+			</div>
+		</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Value Size</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="valueSize">36</span>
+				<input type="range" id="valueSize" min="20" max="50" value="36">
+			</div>
+		</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Percentage Size</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="percentageSize">16</span>
+				<input type="range" id="percentageSize" min="10" max="24" value="16">
+			</div>
+		</div>
+		
+		<!-- Position Settings -->
+		<div type="group" class="sdpi-heading">Position Settings</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Title Y Position</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="titleY">20</span>
+				<input type="range" id="titleY" min="15" max="40" value="20">
+			</div>
+		</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Value Y Position</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="valueY">72</span>
+				<input type="range" id="valueY" min="60" max="100" value="72">
+			</div>
+		</div>
+		
+		<div type="range" class="sdpi-item">
+			<div class="sdpi-item-label">Percentage Y Position</div>
+			<div class="sdpi-item-value">
+				<span class="clickable" data-target="percentageY">124</span>
+				<input type="range" id="percentageY" min="110" max="140" value="124">
+			</div>
+		</div>
+		
+		<!-- Color Settings -->
+		<div type="group" class="sdpi-heading">Color Settings</div>
+		
+		<div type="color" class="sdpi-item">
+			<div class="sdpi-item-label">Background Color</div>
+			<input type="color" class="sdpi-item-value" id="backgroundColor" value="#1a1a2e">
+		</div>
+		
+		<div type="color" class="sdpi-item">
+			<div class="sdpi-item-label">Text Color</div>
+			<input type="color" class="sdpi-item-value" id="textColor" value="#ffffff">
+		</div>
+		
+		<div type="color" class="sdpi-item">
+			<div class="sdpi-item-label">Positive Change Color</div>
+			<input type="color" class="sdpi-item-value" id="positiveColor" value="#16c784">
+		</div>
+		
+		<div type="color" class="sdpi-item">
+			<div class="sdpi-item-label">Negative Change Color</div>
+			<input type="color" class="sdpi-item-value" id="negativeColor" value="#ea3943">
+		</div>
+		
+		<!-- Reset Button -->
+		<div type="group"></div>
+		<div type="button" class="sdpi-item">
+			<button class="sdpi-item-value" id="resetButton">Reset to Defaults</button>
+		</div>
+		
+	</div>
+
+	<script src="common.js"></script>
+	<script src="active-users-pi.js"></script>
+</body>
+</html>
+

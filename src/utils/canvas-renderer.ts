@@ -4,6 +4,12 @@ export interface TileData {
   percentageChange?: number;
   backgroundColor?: string;
   textColor?: string;
+  titleSize?: number;
+  valueSize?: number;
+  percentageSize?: number;
+  titleY?: number;
+  valueY?: number;
+  percentageY?: number;
 }
 
 export interface Theme {
@@ -45,7 +51,16 @@ export async function renderTile(data: TileData): Promise<string> {
     percentageChange,
     backgroundColor = "#1a1a2e",
     textColor = "#ffffff",
+    titleSize = 14,
+    valueSize = 36,
+    percentageSize = 16,
   } = data;
+
+  // Calculate consistent padding (default 20px from edges)
+  const edgePadding = 20;
+  const titleY = data.titleY || edgePadding;
+  const valueY = data.valueY || 72; // Always centered vertically
+  const percentageY = data.percentageY || (144 - edgePadding); // Equal padding from bottom
 
   // Determine percentage color (green for positive, red for negative)
   const isPositive = percentageChange !== undefined && percentageChange >= 0;
@@ -75,9 +90,9 @@ export async function renderTile(data: TileData): Promise<string> {
   <!-- Title at top -->
   <text
     x="72"
-    y="25"
+    y="${titleY}"
     font-family="Arial, sans-serif"
-    font-size="14"
+    font-size="${titleSize}"
     font-weight="600"
     fill="${textColor}"
     text-anchor="middle"
@@ -87,9 +102,9 @@ export async function renderTile(data: TileData): Promise<string> {
   <!-- Main value in middle -->
   <text
     x="72"
-    y="85"
+    y="${valueY}"
     font-family="Arial, sans-serif"
-    font-size="36"
+    font-size="${valueSize}"
     font-weight="bold"
     fill="${textColor}"
     text-anchor="middle"
@@ -99,19 +114,22 @@ export async function renderTile(data: TileData): Promise<string> {
   ${
     percentageText
       ? `
-  <!-- Arrow indicator -->
-  ${percentageChange !== 0 ? (isPositive ? upArrow : downArrow) : ""}
-  
   <!-- Percentage text -->
   <text
-    x="82"
-    y="134"
+    x="72"
+    y="${percentageY}"
     font-family="Arial, sans-serif"
-    font-size="16"
+    font-size="${percentageSize}"
     font-weight="600"
     fill="${percentageColor}"
     text-anchor="middle"
-  >${escapeXml(percentageText)}</text>`
+  >${escapeXml(percentageText)}</text>
+  
+  <!-- Arrow indicator positioned after text -->
+  ${percentageChange !== 0 ? `
+  <g transform="translate(${percentageText.length > 5 ? 100 : 95}, 124)">
+    ${isPositive ? upArrow.replace('72', '0').replace('76', '4').replace('68', '-4') : downArrow.replace('72', '0').replace('76', '4').replace('68', '-4')}
+  </g>` : ""}`
       : ""
   }
 </svg>`;
