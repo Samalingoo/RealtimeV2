@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+com.samal.test.sdPlugin/bin/node_modules/
+
+# Sensitive files
+service-account.json
+config.json
+
+# Build outputs
+com.samal.test.sdPlugin/bin/plugin.js
+com.samal.test.sdPlugin/bin/plugin.js.map
+
+# Logs
+com.samal.test.sdPlugin/logs/*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Stream Deck package
+*.streamDeckPlugin
+
+# Package manager files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock

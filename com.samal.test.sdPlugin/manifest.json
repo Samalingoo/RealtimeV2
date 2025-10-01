@@ -1,0 +1,79 @@
+{
+	"Name": "Google Analytics",
+	"Version": "1.0.0.0",
+	"Author": "samal",
+	"Actions": [
+		{
+			"Name": "Active Users",
+			"UUID": "com.samal.test.active-users",
+			"Icon": "imgs/actions/active-users/icon",
+			"Tooltip": "Displays real-time active users from Google Analytics",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/active-users/key",
+					"TitleAlignment": "middle",
+					"FontSize": "16"
+				}
+			]
+		},
+		{
+			"Name": "Daily Pageviews",
+			"UUID": "com.samal.test.daily-pageviews",
+			"Icon": "imgs/actions/daily-pageviews/icon",
+			"Tooltip": "Displays pageviews from the last 24 hours",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/daily-pageviews/key",
+					"TitleAlignment": "middle",
+					"FontSize": "16"
+				}
+			]
+		},
+		{
+			"Name": "Weekly Pageviews",
+			"UUID": "com.samal.test.weekly-pageviews",
+			"Icon": "imgs/actions/weekly-pageviews/icon",
+			"Tooltip": "Displays pageviews from the last 7 days",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/weekly-pageviews/key",
+					"TitleAlignment": "middle",
+					"FontSize": "16"
+				}
+			]
+		}
+	],
+	"Category": "Analytics",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Display Google Analytics statistics on your Stream Deck",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 2,
+	"Software": {
+		"MinimumVersion": "6.5"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "20",
+		"Debug": "enabled"
+	},
+	"UUID": "com.samal.test"
+}
