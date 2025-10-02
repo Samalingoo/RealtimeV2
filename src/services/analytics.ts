@@ -202,7 +202,7 @@ export class AnalyticsService {
   }
 
   /**
-   * Get daily pageviews with percentage change vs yesterday
+   * Get daily unique users with percentage change vs yesterday
    */
   public async getDailyPageviewsWithChange(): Promise<{ value: number; change: number }> {
     if (!this.isInitialized) {
@@ -210,7 +210,7 @@ export class AnalyticsService {
     }
 
     try {
-      logger.debug("Fetching daily pageviews with comparison to yesterday...");
+      logger.debug("Fetching daily unique users with comparison to yesterday...");
 
       const analyticsData = google.analyticsdata("v1beta");
       const response = await analyticsData.properties.runReport({
@@ -221,7 +221,7 @@ export class AnalyticsService {
             { startDate: "1daysAgo", endDate: "today" },      // Today (last 24hrs)
             { startDate: "2daysAgo", endDate: "1daysAgo" },   // Yesterday
           ],
-          metrics: [{ name: "screenPageViews" }],
+          metrics: [{ name: "totalUsers" }],
         },
       });
 
@@ -237,17 +237,17 @@ export class AnalyticsService {
       
       const change = yesterday === 0 ? 0 : ((today - yesterday) / yesterday) * 100;
       
-      logger.debug(`Daily Pageviews: today=${today}, yesterday=${yesterday}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      logger.debug(`Daily Unique Users: today=${today}, yesterday=${yesterday}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
       
       return { value: today, change };
     } catch (error) {
-      logger.error("Error fetching daily pageviews with change:", error);
+      logger.error("Error fetching daily unique users with change:", error);
       return { value: -1, change: 0 };
     }
   }
 
   /**
-   * Get weekly pageviews with percentage change vs last week
+   * Get weekly unique users with percentage change vs last week
    */
   public async getWeeklyPageviewsWithChange(): Promise<{ value: number; change: number }> {
     if (!this.isInitialized) {
@@ -255,7 +255,7 @@ export class AnalyticsService {
     }
 
     try {
-      logger.debug("Fetching weekly pageviews with comparison to last week...");
+      logger.debug("Fetching weekly unique users with comparison to last week...");
 
       const analyticsData = google.analyticsdata("v1beta");
       const response = await analyticsData.properties.runReport({
@@ -266,7 +266,7 @@ export class AnalyticsService {
             { startDate: "7daysAgo", endDate: "today" },      // This week (last 7 days)
             { startDate: "14daysAgo", endDate: "7daysAgo" },  // Last week
           ],
-          metrics: [{ name: "screenPageViews" }],
+          metrics: [{ name: "totalUsers" }],
         },
       });
 
@@ -282,11 +282,183 @@ export class AnalyticsService {
       
       const change = lastWeek === 0 ? 0 : ((thisWeek - lastWeek) / lastWeek) * 100;
       
-      logger.debug(`Weekly Pageviews: thisWeek=${thisWeek}, lastWeek=${lastWeek}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      logger.debug(`Weekly Unique Users: thisWeek=${thisWeek}, lastWeek=${lastWeek}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
       
       return { value: thisWeek, change };
     } catch (error) {
-      logger.error("Error fetching weekly pageviews with change:", error);
+      logger.error("Error fetching weekly unique users with change:", error);
+      return { value: -1, change: 0 };
+    }
+  }
+
+  /**
+   * Get previous daily unique users (2 days ago compared to 3 days ago)
+   */
+  public async getPreviousDailyPageviewsWithChange(): Promise<{ value: number; change: number }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      logger.debug("Fetching previous daily unique users with comparison...");
+
+      const analyticsData = google.analyticsdata("v1beta");
+      const response = await analyticsData.properties.runReport({
+        auth: this.auth!,
+        property: this.propertyId,
+        requestBody: {
+          dateRanges: [
+            { startDate: "2daysAgo", endDate: "1daysAgo" },   // Yesterday (previous period)
+            { startDate: "3daysAgo", endDate: "2daysAgo" },   // Day before yesterday
+          ],
+          metrics: [{ name: "totalUsers" }],
+        },
+      });
+
+      const rows = response.data.rows || [];
+      
+      const yesterdayRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_0");
+      const beforeYesterdayRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_1");
+      
+      const yesterday = parseInt(yesterdayRow?.metricValues?.[0]?.value || "0");
+      const beforeYesterday = parseInt(beforeYesterdayRow?.metricValues?.[0]?.value || "0");
+      
+      const change = beforeYesterday === 0 ? 0 : ((yesterday - beforeYesterday) / beforeYesterday) * 100;
+      
+      logger.debug(`Previous Daily Unique Users: yesterday=${yesterday}, beforeYesterday=${beforeYesterday}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      
+      return { value: yesterday, change };
+    } catch (error) {
+      logger.error("Error fetching previous daily unique users with change:", error);
+      return { value: -1, change: 0 };
+    }
+  }
+
+  /**
+   * Get previous weekly unique users (last week compared to 2 weeks ago)
+   */
+  public async getPreviousWeeklyPageviewsWithChange(): Promise<{ value: number; change: number }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      logger.debug("Fetching previous weekly unique users with comparison...");
+
+      const analyticsData = google.analyticsdata("v1beta");
+      const response = await analyticsData.properties.runReport({
+        auth: this.auth!,
+        property: this.propertyId,
+        requestBody: {
+          dateRanges: [
+            { startDate: "14daysAgo", endDate: "7daysAgo" },  // Last week (previous period)
+            { startDate: "21daysAgo", endDate: "14daysAgo" }, // 2 weeks ago
+          ],
+          metrics: [{ name: "totalUsers" }],
+        },
+      });
+
+      const rows = response.data.rows || [];
+      
+      const lastWeekRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_0");
+      const twoWeeksAgoRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_1");
+      
+      const lastWeek = parseInt(lastWeekRow?.metricValues?.[0]?.value || "0");
+      const twoWeeksAgo = parseInt(twoWeeksAgoRow?.metricValues?.[0]?.value || "0");
+      
+      const change = twoWeeksAgo === 0 ? 0 : ((lastWeek - twoWeeksAgo) / twoWeeksAgo) * 100;
+      
+      logger.debug(`Previous Weekly Unique Users: lastWeek=${lastWeek}, twoWeeksAgo=${twoWeeksAgo}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      
+      return { value: lastWeek, change };
+    } catch (error) {
+      logger.error("Error fetching previous weekly unique users with change:", error);
+      return { value: -1, change: 0 };
+    }
+  }
+
+  /**
+   * Get monthly unique users (last 30 days compared to previous 30 days)
+   */
+  public async getMonthlyUniqueUsersWithChange(): Promise<{ value: number; change: number }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      logger.debug("Fetching monthly unique users with comparison...");
+
+      const analyticsData = google.analyticsdata("v1beta");
+      const response = await analyticsData.properties.runReport({
+        auth: this.auth!,
+        property: this.propertyId,
+        requestBody: {
+          dateRanges: [
+            { startDate: "30daysAgo", endDate: "today" },     // Last 30 days
+            { startDate: "60daysAgo", endDate: "30daysAgo" }, // Previous 30 days
+          ],
+          metrics: [{ name: "totalUsers" }],
+        },
+      });
+
+      const rows = response.data.rows || [];
+      
+      const thisMonthRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_0");
+      const lastMonthRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_1");
+      
+      const thisMonth = parseInt(thisMonthRow?.metricValues?.[0]?.value || "0");
+      const lastMonth = parseInt(lastMonthRow?.metricValues?.[0]?.value || "0");
+      
+      const change = lastMonth === 0 ? 0 : ((thisMonth - lastMonth) / lastMonth) * 100;
+      
+      logger.debug(`Monthly Unique Users: thisMonth=${thisMonth}, lastMonth=${lastMonth}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      
+      return { value: thisMonth, change };
+    } catch (error) {
+      logger.error("Error fetching monthly unique users with change:", error);
+      return { value: -1, change: 0 };
+    }
+  }
+
+  /**
+   * Get previous monthly unique users (31-60 days ago compared to 61-90 days ago)
+   */
+  public async getPreviousMonthlyUniqueUsersWithChange(): Promise<{ value: number; change: number }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      logger.debug("Fetching previous monthly unique users with comparison...");
+
+      const analyticsData = google.analyticsdata("v1beta");
+      const response = await analyticsData.properties.runReport({
+        auth: this.auth!,
+        property: this.propertyId,
+        requestBody: {
+          dateRanges: [
+            { startDate: "60daysAgo", endDate: "30daysAgo" },  // Previous month (31-60 days ago)
+            { startDate: "90daysAgo", endDate: "60daysAgo" },  // 2 months ago
+          ],
+          metrics: [{ name: "totalUsers" }],
+        },
+      });
+
+      const rows = response.data.rows || [];
+      
+      const lastMonthRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_0");
+      const twoMonthsAgoRow = rows.find(r => r.dimensionValues?.[0]?.value === "date_range_1");
+      
+      const lastMonth = parseInt(lastMonthRow?.metricValues?.[0]?.value || "0");
+      const twoMonthsAgo = parseInt(twoMonthsAgoRow?.metricValues?.[0]?.value || "0");
+      
+      const change = twoMonthsAgo === 0 ? 0 : ((lastMonth - twoMonthsAgo) / twoMonthsAgo) * 100;
+      
+      logger.debug(`Previous Monthly Unique Users: lastMonth=${lastMonth}, twoMonthsAgo=${twoMonthsAgo}, change=${change >= 0 ? "+" : ""}${change.toFixed(1)}%`);
+      
+      return { value: lastMonth, change };
+    } catch (error) {
+      logger.error("Error fetching previous monthly unique users with change:", error);
       return { value: -1, change: 0 };
     }
   }

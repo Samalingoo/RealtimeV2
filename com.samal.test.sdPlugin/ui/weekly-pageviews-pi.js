@@ -3,7 +3,7 @@
  */
 
 const defaults = {
-	customTitle: 'Weekly Views',
+	customTitle: 'Weekly Users',
 	titleSize: 14,
 	valueSize: 36,
 	percentageSize: 16,

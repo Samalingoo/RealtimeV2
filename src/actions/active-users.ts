@@ -55,7 +55,7 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
     } else {
       // Immediately update this instance with cached data
       if (this.lastValue !== undefined && this.lastChange !== undefined) {
-        await this.updateMetric(ev.action, ev.payload.settings, this.lastValue, this.lastChange);
+        await this.updateMetric(ev.action, ev.payload.settings);
       }
     }
   }
@@ -71,7 +71,7 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
     
     // Immediately re-render with new settings
     if (this.lastValue !== undefined && this.lastChange !== undefined) {
-      await this.updateMetric(ev.action, ev.payload.settings, this.lastValue, this.lastChange);
+      await this.updateMetric(ev.action, ev.payload.settings);
     }
   }
 
@@ -98,7 +98,6 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
    */
   override async onKeyDown(ev: KeyDownEvent<ActiveUsersSettings>): Promise<void> {
     logger.debug("Active Users action pressed - manual refresh");
-    await ev.action.setTitle("Updating...");
     await this.updateMetric(ev.action, ev.payload.settings);
   }
 
@@ -142,8 +141,14 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
       if (value === -1) {
         // Show error state
         for (const [contextId, actionInstance] of this.activeContexts) {
-          await actionInstance.setTitle("Error");
-          await actionInstance.setImage("");
+          const imageData = await renderTile({
+            title: "Active Users",
+            value: "Error",
+            backgroundColor: "#1a1a2e",
+            textColor: "#ffffff",
+          });
+          await actionInstance.setImage(imageData);
+          await actionInstance.setTitle("");
         }
         return;
       }
@@ -155,7 +160,7 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
       // Update all visible instances using cached settings
       for (const [contextId, actionInstance] of this.activeContexts) {
         const settings = this.settingsCache.get(contextId) || {};
-        await this.updateMetric(actionInstance, settings, value, change);
+        await this.updateMetric(actionInstance, settings);
       }
 
       logger.debug(`Active Users updated: ${value} (${change >= 0 ? "+" : ""}${change.toFixed(1)}%)`);
@@ -164,8 +169,14 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
       
       // Show error on all instances
       for (const [contextId, actionInstance] of this.activeContexts) {
-        await actionInstance.setTitle("Error");
-        await actionInstance.setImage("");
+        const imageData = await renderTile({
+          title: "Active Users",
+          value: "Error",
+          backgroundColor: "#1a1a2e",
+          textColor: "#ffffff",
+        });
+        await actionInstance.setImage(imageData);
+        await actionInstance.setTitle("");
       }
     }
   }
@@ -173,18 +184,30 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
   /**
    * Update a specific action instance
    */
-  private async updateMetric(action: any, settings?: ActiveUsersSettings, value?: number, change?: number): Promise<void> {
+  private async updateMetric(action: any, settings?: ActiveUsersSettings): Promise<void> {
     try {
-      // Fetch data if not provided
-      if (value === undefined || change === undefined) {
+      // Use cached data or fetch if not available
+      let value: number;
+      let change: number;
+
+      if (this.lastValue !== undefined && this.lastChange !== undefined) {
+        value = this.lastValue;
+        change = this.lastChange;
+      } else {
         const result = await this.analyticsService.getActiveUsersWithChange();
         value = result.value;
         change = result.change;
       }
       
       if (value === -1) {
-        await action.setTitle("Error");
-        await action.setImage("");
+        const imageData = await renderTile({
+          title: settings?.customTitle || "Active Users",
+          value: "Error",
+          backgroundColor: settings?.backgroundColor || "#1a1a2e",
+          textColor: settings?.textColor || "#ffffff",
+        });
+        await action.setImage(imageData);
+        await action.setTitle("");
         return;
       }
 
@@ -207,8 +230,14 @@ export class ActiveUsersAction extends SingletonAction<ActiveUsersSettings> {
       await action.setTitle("");
     } catch (error) {
       logger.error("Error updating Active Users metric:", error);
-      await action.setTitle("Error");
-      await action.setImage("");
+      const imageData = await renderTile({
+        title: settings?.customTitle || "Active Users",
+        value: "Error",
+        backgroundColor: settings?.backgroundColor || "#1a1a2e",
+        textColor: settings?.textColor || "#ffffff",
+      });
+      await action.setImage(imageData);
+      await action.setTitle("");
     }
   }
 }

@@ -1,19 +1,19 @@
 /**
- * Property Inspector for Daily Pageviews action
+ * Property Inspector for Monthly Unique Users action
  */
 
 const defaults = {
-	customTitle: 'Daily Users',
+	customTitle: 'Monthly Users',
 	titleSize: 14,
 	valueSize: 36,
 	percentageSize: 16,
 	titleY: 20,
 	valueY: 72,
 	percentageY: 124,
-	backgroundColor: '#0f3460',
+	backgroundColor: '#16213e',
 	textColor: '#ffffff',
-	positiveColor: '#16c784',
-	negativeColor: '#ea3943'
+	positiveColor: '#00b894',
+	negativeColor: '#d63031'
 };
 
 document.addEventListener('DOMContentLoaded', function() {

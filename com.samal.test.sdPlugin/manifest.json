@@ -53,6 +53,23 @@
 					"FontSize": "16"
 				}
 			]
+		},
+		{
+			"Name": "Monthly Unique Users",
+			"UUID": "com.samal.test.monthly-unique-users",
+			"Icon": "imgs/actions/monthly-unique-users/icon",
+			"Tooltip": "Displays unique users from the last 30 days",
+			"PropertyInspectorPath": "ui/monthly-unique-users.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/monthly-unique-users/key",
+					"TitleAlignment": "middle",
+					"FontSize": "16"
+				}
+			]
 		}
 	],
 	"Category": "Analytics",

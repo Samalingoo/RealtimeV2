@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import { loadConfig } from "../services/config";
 import { renderTile, formatNumber } from "../utils/canvas-renderer";
 
-interface DailyPageviewsSettings {
+interface MonthlyUniqueUsersSettings {
   customTitle?: string;
   titleSize?: number;
   valueSize?: number;
@@ -20,14 +20,14 @@ interface DailyPageviewsSettings {
 }
 
 /**
- * Displays daily unique users (last 24 hours) from Google Analytics
+ * Displays monthly unique users (last 30 days) from Google Analytics
  */
-@action({ UUID: "com.samal.test.daily-pageviews" })
-export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings> {
+@action({ UUID: "com.samal.test.monthly-unique-users" })
+export class MonthlyUniqueUsersAction extends SingletonAction<MonthlyUniqueUsersSettings> {
   private analyticsService: AnalyticsService;
   private pollInterval: NodeJS.Timeout | null = null;
   private activeContexts = new Map<string, any>();
-  private settingsCache = new Map<string, DailyPageviewsSettings>();
+  private settingsCache = new Map<string, MonthlyUniqueUsersSettings>();
   private lastValue?: number;
   private lastChange?: number;
   private lastPreviousValue?: number;
@@ -36,15 +36,15 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
   constructor() {
     super();
     this.analyticsService = new AnalyticsService();
-    logger.info("DailyPageviewsAction initialized");
+    logger.info("MonthlyUniqueUsersAction initialized");
   }
 
-  override async onWillAppear(ev: WillAppearEvent<DailyPageviewsSettings>): Promise<void> {
+  override async onWillAppear(ev: WillAppearEvent<MonthlyUniqueUsersSettings>): Promise<void> {
     const contextId = ev.action.id;
     this.activeContexts.set(contextId, ev.action);
     this.settingsCache.set(contextId, ev.payload.settings);
 
-    logger.debug(`Daily Pageviews action appeared (context: ${contextId})`);
+    logger.debug(`Monthly Unique Users action appeared (context: ${contextId})`);
     await ev.action.setTitle("Loading...");
 
     if (this.activeContexts.size === 1) {
@@ -54,10 +54,10 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
     }
   }
 
-  override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<DailyPageviewsSettings>): Promise<void> {
+  override async onDidReceiveSettings(ev: DidReceiveSettingsEvent<MonthlyUniqueUsersSettings>): Promise<void> {
     const contextId = ev.action.id;
     this.settingsCache.set(contextId, ev.payload.settings);
-    logger.debug(`Daily Pageviews settings updated for context ${contextId}`);
+    logger.debug(`Monthly Unique Users settings updated for context ${contextId}`);
     if (this.lastValue !== undefined && this.lastChange !== undefined) {
       await this.updateMetric(ev.action, ev.payload.settings);
     }
@@ -68,7 +68,7 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
     this.activeContexts.delete(contextId);
     this.settingsCache.delete(contextId);
 
-    logger.debug(`Daily Pageviews action disappeared (context: ${contextId})`);
+    logger.debug(`Monthly Unique Users action disappeared (context: ${contextId})`);
 
     if (this.activeContexts.size === 0) {
       this.stopPolling();
@@ -77,8 +77,8 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
     }
   }
 
-  override async onKeyDown(ev: KeyDownEvent<DailyPageviewsSettings>): Promise<void> {
-    logger.debug("Daily Pageviews action pressed - toggling period");
+  override async onKeyDown(ev: KeyDownEvent<MonthlyUniqueUsersSettings>): Promise<void> {
+    logger.debug("Monthly Unique Users action pressed - toggling period");
     
     const contextId = ev.action.id;
     const currentSettings = this.settingsCache.get(contextId) || {};
@@ -97,7 +97,7 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
 
   private startPolling(): void {
     const config = loadConfig();
-    logger.info(`Starting Daily Pageviews polling (interval: ${config.pollIntervalMs}ms)`);
+    logger.info(`Starting Monthly Unique Users polling (interval: ${config.pollIntervalMs}ms)`);
 
     this.updateAllInstances();
     this.pollInterval = setInterval(() => {
@@ -109,26 +109,26 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
-      logger.info("Daily Pageviews polling stopped");
+      logger.info("Monthly Unique Users polling stopped");
     }
   }
 
   private async updateAllInstances(): Promise<void> {
-    logger.debug(`Updating ${this.activeContexts.size} Daily Pageviews instance(s)`);
+    logger.debug(`Updating ${this.activeContexts.size} Monthly Unique Users instance(s)`);
 
     try {
       // Fetch both current and previous period data
       const [currentData, previousData] = await Promise.all([
-        this.analyticsService.getDailyPageviewsWithChange(),
-        this.analyticsService.getPreviousDailyPageviewsWithChange()
+        this.analyticsService.getMonthlyUniqueUsersWithChange(),
+        this.analyticsService.getPreviousMonthlyUniqueUsersWithChange()
       ]);
       
       if (currentData.value === -1) {
         for (const [contextId, actionInstance] of this.activeContexts) {
           const imageData = await renderTile({
-            title: "Daily Users",
+            title: "Monthly Users",
             value: "Error",
-            backgroundColor: "#0f3460",
+            backgroundColor: "#16213e",
             textColor: "#ffffff",
           });
           await actionInstance.setImage(imageData);
@@ -147,14 +147,14 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
         await this.updateMetric(actionInstance, settings);
       }
 
-      logger.debug(`Daily Pageviews updated: ${formatNumber(currentData.value)} (${currentData.change >= 0 ? "+" : ""}${currentData.change.toFixed(1)}%)`);
+      logger.debug(`Monthly Unique Users updated: ${formatNumber(currentData.value)} (${currentData.change >= 0 ? "+" : ""}${currentData.change.toFixed(1)}%)`);
     } catch (error) {
-      logger.error("Error updating Daily Pageviews:", error);
+      logger.error("Error updating Monthly Unique Users:", error);
       for (const [contextId, actionInstance] of this.activeContexts) {
         const imageData = await renderTile({
-          title: "Daily Users",
+          title: "Monthly Users",
           value: "Error",
-          backgroundColor: "#0f3460",
+          backgroundColor: "#16213e",
           textColor: "#ffffff",
         });
         await actionInstance.setImage(imageData);
@@ -163,7 +163,7 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
     }
   }
 
-  private async updateMetric(action: any, settings?: DailyPageviewsSettings): Promise<void> {
+  private async updateMetric(action: any, settings?: MonthlyUniqueUsersSettings): Promise<void> {
     try {
       const showingPrevious = settings?.showingPrevious || false;
       let value: number;
@@ -175,7 +175,7 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
           value = this.lastPreviousValue;
           change = this.lastPreviousChange;
         } else {
-          const result = await this.analyticsService.getPreviousDailyPageviewsWithChange();
+          const result = await this.analyticsService.getPreviousMonthlyUniqueUsersWithChange();
           value = result.value;
           change = result.change;
         }
@@ -185,7 +185,7 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
           value = this.lastValue;
           change = this.lastChange;
         } else {
-          const result = await this.analyticsService.getDailyPageviewsWithChange();
+          const result = await this.analyticsService.getMonthlyUniqueUsersWithChange();
           value = result.value;
           change = result.change;
         }
@@ -193,9 +193,9 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
       
       if (value === -1) {
         const imageData = await renderTile({
-          title: settings?.customTitle || "Daily Users",
+          title: settings?.customTitle || "Monthly Users",
           value: "Error",
-          backgroundColor: settings?.backgroundColor || "#0f3460",
+          backgroundColor: settings?.backgroundColor || "#16213e",
           textColor: settings?.textColor || "#ffffff",
         });
         await action.setImage(imageData);
@@ -204,14 +204,14 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
       }
 
       // Update the title to reflect which period is shown
-      const baseTitle = settings?.customTitle || "Daily Users";
+      const baseTitle = settings?.customTitle || "Monthly Users";
       const displayTitle = showingPrevious ? `${baseTitle} (Prev)` : baseTitle;
 
       const imageData = await renderTile({
         title: displayTitle,
         value: formatNumber(value),
         percentageChange: change,
-        backgroundColor: settings?.backgroundColor || "#0f3460",
+        backgroundColor: settings?.backgroundColor || "#16213e",
         textColor: settings?.textColor || "#ffffff",
         titleSize: settings?.titleSize || 14,
         valueSize: settings?.valueSize || 36,
@@ -224,11 +224,11 @@ export class DailyPageviewsAction extends SingletonAction<DailyPageviewsSettings
       await action.setImage(imageData);
       await action.setTitle("");
     } catch (error) {
-      logger.error("Error updating Daily Pageviews metric:", error);
+      logger.error("Error updating Monthly Unique Users metric:", error);
       const imageData = await renderTile({
-        title: settings?.customTitle || "Daily Users",
+        title: settings?.customTitle || "Monthly Users",
         value: "Error",
-        backgroundColor: settings?.backgroundColor || "#0f3460",
+        backgroundColor: settings?.backgroundColor || "#16213e",
         textColor: settings?.textColor || "#ffffff",
       });
       await action.setImage(imageData);

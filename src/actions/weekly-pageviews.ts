@@ -16,10 +16,11 @@ interface WeeklyPageviewsSettings {
   textColor?: string;
   positiveColor?: string;
   negativeColor?: string;
+  showingPrevious?: boolean;
 }
 
 /**
- * Displays weekly pageviews (last 7 days) from Google Analytics
+ * Displays weekly unique users (last 7 days) from Google Analytics
  */
 @action({ UUID: "com.samal.test.weekly-pageviews" })
 export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettings> {
@@ -29,6 +30,8 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
   private settingsCache = new Map<string, WeeklyPageviewsSettings>();
   private lastValue?: number;
   private lastChange?: number;
+  private lastPreviousValue?: number;
+  private lastPreviousChange?: number;
 
   constructor() {
     super();
@@ -47,7 +50,7 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
     if (this.activeContexts.size === 1) {
       this.startPolling();
     } else if (this.lastValue !== undefined && this.lastChange !== undefined) {
-      await this.updateMetric(ev.action, ev.payload.settings, this.lastValue, this.lastChange);
+      await this.updateMetric(ev.action, ev.payload.settings);
     }
   }
 
@@ -56,7 +59,7 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
     this.settingsCache.set(contextId, ev.payload.settings);
     logger.debug(`Weekly Pageviews settings updated for context ${contextId}`);
     if (this.lastValue !== undefined && this.lastChange !== undefined) {
-      await this.updateMetric(ev.action, ev.payload.settings, this.lastValue, this.lastChange);
+      await this.updateMetric(ev.action, ev.payload.settings);
     }
   }
 
@@ -75,9 +78,21 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
   }
 
   override async onKeyDown(ev: KeyDownEvent<WeeklyPageviewsSettings>): Promise<void> {
-    logger.debug("Weekly Pageviews action pressed - manual refresh");
-    await ev.action.setTitle("Updating...");
-    await this.updateMetric(ev.action);
+    logger.debug("Weekly Pageviews action pressed - toggling period");
+    
+    const contextId = ev.action.id;
+    const currentSettings = this.settingsCache.get(contextId) || {};
+    
+    // Toggle the showingPrevious flag
+    const showingPrevious = !currentSettings.showingPrevious;
+    const updatedSettings = { ...currentSettings, showingPrevious };
+    
+    // Save the updated settings
+    this.settingsCache.set(contextId, updatedSettings);
+    await ev.action.setSettings(updatedSettings);
+    
+    // Update the display immediately
+    await this.updateMetric(ev.action, updatedSettings);
   }
 
   private startPolling(): void {
@@ -102,50 +117,98 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
     logger.debug(`Updating ${this.activeContexts.size} Weekly Pageviews instance(s)`);
 
     try {
-      const { value, change } = await this.analyticsService.getWeeklyPageviewsWithChange();
+      // Fetch both current and previous period data
+      const [currentData, previousData] = await Promise.all([
+        this.analyticsService.getWeeklyPageviewsWithChange(),
+        this.analyticsService.getPreviousWeeklyPageviewsWithChange()
+      ]);
       
-      if (value === -1) {
+      if (currentData.value === -1) {
         for (const [contextId, actionInstance] of this.activeContexts) {
-          await actionInstance.setTitle("Error");
-          await actionInstance.setImage("");
+          const imageData = await renderTile({
+            title: "Weekly Users",
+            value: "Error",
+            backgroundColor: "#2d3436",
+            textColor: "#dfe6e9",
+          });
+          await actionInstance.setImage(imageData);
+          await actionInstance.setTitle("");
         }
         return;
       }
 
-      this.lastValue = value;
-      this.lastChange = change;
+      this.lastValue = currentData.value;
+      this.lastChange = currentData.change;
+      this.lastPreviousValue = previousData.value;
+      this.lastPreviousChange = previousData.change;
 
       for (const [contextId, actionInstance] of this.activeContexts) {
         const settings = this.settingsCache.get(contextId) || {};
-        await this.updateMetric(actionInstance, settings, value, change);
+        await this.updateMetric(actionInstance, settings);
       }
 
-      logger.debug(`Weekly Pageviews updated: ${formatNumber(value)} (${change >= 0 ? "+" : ""}${change.toFixed(1)}%)`);
+      logger.debug(`Weekly Pageviews updated: ${formatNumber(currentData.value)} (${currentData.change >= 0 ? "+" : ""}${currentData.change.toFixed(1)}%)`);
     } catch (error) {
       logger.error("Error updating Weekly Pageviews:", error);
       for (const [contextId, actionInstance] of this.activeContexts) {
-        await actionInstance.setTitle("Error");
-        await actionInstance.setImage("");
+        const imageData = await renderTile({
+          title: "Weekly Users",
+          value: "Error",
+          backgroundColor: "#2d3436",
+          textColor: "#dfe6e9",
+        });
+        await actionInstance.setImage(imageData);
+        await actionInstance.setTitle("");
       }
     }
   }
 
-  private async updateMetric(action: any, settings?: WeeklyPageviewsSettings, value?: number, change?: number): Promise<void> {
+  private async updateMetric(action: any, settings?: WeeklyPageviewsSettings): Promise<void> {
     try {
-      if (value === undefined || change === undefined) {
-        const result = await this.analyticsService.getWeeklyPageviewsWithChange();
-        value = result.value;
-        change = result.change;
+      const showingPrevious = settings?.showingPrevious || false;
+      let value: number;
+      let change: number;
+
+      if (showingPrevious) {
+        // Use cached previous period data or fetch if not available
+        if (this.lastPreviousValue !== undefined && this.lastPreviousChange !== undefined) {
+          value = this.lastPreviousValue;
+          change = this.lastPreviousChange;
+        } else {
+          const result = await this.analyticsService.getPreviousWeeklyPageviewsWithChange();
+          value = result.value;
+          change = result.change;
+        }
+      } else {
+        // Use cached current period data or fetch if not available
+        if (this.lastValue !== undefined && this.lastChange !== undefined) {
+          value = this.lastValue;
+          change = this.lastChange;
+        } else {
+          const result = await this.analyticsService.getWeeklyPageviewsWithChange();
+          value = result.value;
+          change = result.change;
+        }
       }
       
       if (value === -1) {
-        await action.setTitle("Error");
-        await action.setImage("");
+        const imageData = await renderTile({
+          title: settings?.customTitle || "Weekly Users",
+          value: "Error",
+          backgroundColor: settings?.backgroundColor || "#2d3436",
+          textColor: settings?.textColor || "#dfe6e9",
+        });
+        await action.setImage(imageData);
+        await action.setTitle("");
         return;
       }
 
+      // Update the title to reflect which period is shown
+      const baseTitle = settings?.customTitle || "Weekly Users";
+      const displayTitle = showingPrevious ? `${baseTitle} (Prev)` : baseTitle;
+
       const imageData = await renderTile({
-        title: settings?.customTitle || "Weekly Views",
+        title: displayTitle,
         value: formatNumber(value),
         percentageChange: change,
         backgroundColor: settings?.backgroundColor || "#2d3436",
@@ -162,8 +225,14 @@ export class WeeklyPageviewsAction extends SingletonAction<WeeklyPageviewsSettin
       await action.setTitle("");
     } catch (error) {
       logger.error("Error updating Weekly Pageviews metric:", error);
-      await action.setTitle("Error");
-      await action.setImage("");
+      const imageData = await renderTile({
+        title: settings?.customTitle || "Weekly Users",
+        value: "Error",
+        backgroundColor: settings?.backgroundColor || "#2d3436",
+        textColor: settings?.textColor || "#dfe6e9",
+      });
+      await action.setImage(imageData);
+      await action.setTitle("");
     }
   }
 }
